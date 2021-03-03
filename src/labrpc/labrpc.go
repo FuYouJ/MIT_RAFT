@@ -49,7 +49,9 @@ package labrpc
 //   pass svc to srv.AddService()
 //
 
-import "../labgob"
+import (
+	labgob2 "raft/src/labgob"
+)
 import "bytes"
 import "reflect"
 import "sync"
@@ -89,7 +91,7 @@ func (e *ClientEnd) Call(svcMeth string, args interface{}, reply interface{}) bo
 	req.replyCh = make(chan replyMsg)
 
 	qb := new(bytes.Buffer)
-	qe := labgob.NewEncoder(qb)
+	qe := labgob2.NewEncoder(qb)
 	qe.Encode(args)
 	req.args = qb.Bytes()
 
@@ -110,7 +112,7 @@ func (e *ClientEnd) Call(svcMeth string, args interface{}, reply interface{}) bo
 	rep := <-req.replyCh
 	if rep.ok {
 		rb := bytes.NewBuffer(rep.reply)
-		rd := labgob.NewDecoder(rb)
+		rd := labgob2.NewDecoder(rb)
 		if err := rd.Decode(reply); err != nil {
 			log.Fatalf("ClientEnd.Call(): decode reply: %v\n", err)
 		}
@@ -481,7 +483,7 @@ func (svc *Service) dispatch(methname string, req reqMsg) replyMsg {
 
 		// decode the argument.
 		ab := bytes.NewBuffer(req.args)
-		ad := labgob.NewDecoder(ab)
+		ad := labgob2.NewDecoder(ab)
 		ad.Decode(args.Interface())
 
 		// allocate space for the reply.
@@ -495,7 +497,7 @@ func (svc *Service) dispatch(methname string, req reqMsg) replyMsg {
 
 		// encode the reply.
 		rb := new(bytes.Buffer)
-		re := labgob.NewEncoder(rb)
+		re := labgob2.NewEncoder(rb)
 		re.EncodeValue(replyv)
 
 		return replyMsg{true, rb.Bytes()}

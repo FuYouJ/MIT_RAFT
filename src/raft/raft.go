@@ -19,10 +19,10 @@ package raft
 
 import (
 	"bytes"
-	"labgob"
-	"labrpc"
 	"log"
 	"math/rand"
+	"raft/src/labgob"
+	"raft/src/labrpc"
 	"sync"
 	"time"
 )

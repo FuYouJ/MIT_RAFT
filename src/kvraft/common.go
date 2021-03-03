@@ -19,7 +19,7 @@ type PutAppendArgs struct {
 	//客户端编号
 	ClerkID int64
 	//这个clerk发送的第几条信息
-	CmdIndex int
+	CmdIndex int64
 }
 
 //很可能请求的时候 leader 挂了，就打在了 follower 上
@@ -34,7 +34,7 @@ type GetArgs struct {
 	//客户端编号
 	ClerkID int64
 	//这个clerk发送的第几条信息
-	CmdIndex int
+	CmdIndex int64
 }
 
 type GetReply struct {

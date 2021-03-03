@@ -8,7 +8,9 @@ package raft
 // test with the original before submitting.
 //
 
-import "labrpc"
+import (
+	labrpc2 "raft/src/labrpc"
+)
 import "log"
 import "sync"
 import "testing"
@@ -37,7 +39,7 @@ func makeSeed() int64 {
 type config struct {
 	mu        sync.Mutex
 	t         *testing.T
-	net       *labrpc.Network
+	net       *labrpc2.Network
 	n         int
 	rafts     []*Raft
 	applyErr  []string // from apply channel readers
@@ -66,7 +68,7 @@ func make_config(t *testing.T, n int, unreliable bool) *config {
 	runtime.GOMAXPROCS(4)
 	cfg := &config{}
 	cfg.t = t
-	cfg.net = labrpc.MakeNetwork()
+	cfg.net = labrpc2.MakeNetwork()
 	cfg.n = n
 	cfg.applyErr = make([]string, cfg.n)
 	cfg.rafts = make([]*Raft, cfg.n)
@@ -143,7 +145,7 @@ func (cfg *config) start1(i int) {
 	}
 
 	// a fresh set of ClientEnds.
-	ends := make([]*labrpc.ClientEnd, cfg.n)
+	ends := make([]*labrpc2.ClientEnd, cfg.n)
 	for j := 0; j < cfg.n; j++ {
 		ends[j] = cfg.net.MakeEnd(cfg.endnames[i][j])
 		cfg.net.Connect(cfg.endnames[i][j], j)
@@ -208,8 +210,8 @@ func (cfg *config) start1(i int) {
 	cfg.rafts[i] = rf
 	cfg.mu.Unlock()
 
-	svc := labrpc.MakeService(rf)
-	srv := labrpc.MakeServer()
+	svc := labrpc2.MakeService(rf)
+	srv := labrpc2.MakeServer()
 	srv.AddService(svc)
 	cfg.net.AddServer(i, srv)
 }
