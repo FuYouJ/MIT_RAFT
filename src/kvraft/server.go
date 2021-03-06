@@ -1,7 +1,6 @@
 package kvraft
 
 import (
-	"context"
 	"log"
 	"raft/src/labgob"
 	"raft/src/labrpc"
@@ -233,4 +232,12 @@ func (kv *KVServer) loadSnapshot() {
 }
 func (kv *KVServer) decodedSnapshot(data []byte) {
 
+}
+func (kv *KVServer) receiveNewMsg() {
+	for msg := range kv.applyCh {
+		kv.mu.Lock()
+		//按需执行指令
+		index := msg.CommandIndex
+		term := msg.commi
+	}
 }

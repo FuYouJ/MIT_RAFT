@@ -9,18 +9,18 @@ package raft
 //
 
 import (
-	labrpc2 "raft/src/labrpc"
+	crand "crypto/rand"
+	"encoding/base64"
+	"fmt"
+	"log"
+	"math/big"
+	"math/rand"
+	"raft/src/labrpc"
+	"runtime"
+	"sync"
+	"testing"
+	"time"
 )
-import "log"
-import "sync"
-import "testing"
-import "runtime"
-import "math/rand"
-import crand "crypto/rand"
-import "math/big"
-import "encoding/base64"
-import "time"
-import "fmt"
 
 func randstring(n int) string {
 	b := make([]byte, 2*n)
@@ -39,7 +39,7 @@ func makeSeed() int64 {
 type config struct {
 	mu        sync.Mutex
 	t         *testing.T
-	net       *labrpc2.Network
+	net       *labrpc.Network
 	n         int
 	rafts     []*Raft
 	applyErr  []string // from apply channel readers
@@ -68,7 +68,7 @@ func make_config(t *testing.T, n int, unreliable bool) *config {
 	runtime.GOMAXPROCS(4)
 	cfg := &config{}
 	cfg.t = t
-	cfg.net = labrpc2.MakeNetwork()
+	cfg.net = labrpc.MakeNetwork()
 	cfg.n = n
 	cfg.applyErr = make([]string, cfg.n)
 	cfg.rafts = make([]*Raft, cfg.n)
@@ -145,7 +145,7 @@ func (cfg *config) start1(i int) {
 	}
 
 	// a fresh set of ClientEnds.
-	ends := make([]*labrpc2.ClientEnd, cfg.n)
+	ends := make([]*labrpc.ClientEnd, cfg.n)
 	for j := 0; j < cfg.n; j++ {
 		ends[j] = cfg.net.MakeEnd(cfg.endnames[i][j])
 		cfg.net.Connect(cfg.endnames[i][j], j)
@@ -183,6 +183,10 @@ func (cfg *config) start1(i int) {
 				}
 				_, prevok := cfg.logs[i][m.CommandIndex-1]
 				cfg.logs[i][m.CommandIndex] = v
+				//=======================================================================================================
+				DPrintf(true, "info", "me:%2d | Apply new command:%3d   commandIndex:%3d\n", i, v, m.CommandIndex)
+				//=======================================================================================================
+
 				if m.CommandIndex > cfg.maxIndex {
 					cfg.maxIndex = m.CommandIndex
 				}
@@ -210,8 +214,8 @@ func (cfg *config) start1(i int) {
 	cfg.rafts[i] = rf
 	cfg.mu.Unlock()
 
-	svc := labrpc2.MakeService(rf)
-	srv := labrpc2.MakeServer()
+	svc := labrpc.MakeService(rf)
+	srv := labrpc.MakeServer()
 	srv.AddService(svc)
 	cfg.net.AddServer(i, srv)
 }
@@ -368,6 +372,9 @@ func (cfg *config) nCommitted(index int) (int, interface{}) {
 
 		cfg.mu.Lock()
 		cmd1, ok := cfg.logs[i][index]
+		//=======================================================================================================
+		//DPrintf(true, "info", "me:%2d | index:%3d commit when test:%t\n", i, index, ok)
+		//=======================================================================================================
 		cfg.mu.Unlock()
 
 		if ok {
@@ -447,7 +454,7 @@ func (cfg *config) one(cmd int, expectedServers int, retry bool) int {
 				}
 			}
 		}
-
+		//index代表节点最后commit的日志下标
 		if index != -1 {
 			// somebody claimed to be the leader and to have
 			// submitted our command; wait a while for agreement.
@@ -470,6 +477,11 @@ func (cfg *config) one(cmd int, expectedServers int, retry bool) int {
 			time.Sleep(50 * time.Millisecond)
 		}
 	}
+	//=====================================================================================
+	DPrintf(true, "warn", "\n")
+	DPrintf(true, "warn", "No leader!\n")
+	DPrintf(true, "warn", "\n")
+	//=====================================================================================
 	cfg.t.Fatalf("one(%v) failed to reach agreement", cmd)
 	return -1
 }
