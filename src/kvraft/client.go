@@ -34,7 +34,7 @@ func MakeClerk(servers []*labrpc.ClientEnd) *Clerk {
 	//给自己整一个编号
 	ck.me = nrand()
 	ck.cmdIndex = 0
-	_, _ = raft.DPrintf("Client: %20v | 创造了以合new Clerk ! \n", ck.me)
+	raft.InfoKV.Printf("Client: %20v | 创造了以合new Clerk ! \n", ck.me)
 	return ck
 }
 
@@ -53,7 +53,7 @@ func (ck *Clerk) Get(key string) string {
 	ck.cmdIndex++
 	args := GetArgs{Key: key, ClerkID: ck.me, CmdIndex: ck.cmdIndex}
 	leader := ck.leader
-	_, _ = raft.DPrintf("Client:%20v cmdIndex:%4d | Begin ! Get:[%v] from server: %3d\n", ck.me, ck.cmdIndex, key, leader)
+	raft.InfoKV.Printf("Client:%20v cmdIndex:%4d | Begin ! Get:[%v] from server: %3d\n", ck.me, ck.cmdIndex, key, leader)
 
 	for {
 		reply := GetReply{}
@@ -64,7 +64,7 @@ func (ck *Clerk) Get(key string) string {
 			if reply.Value == ErrNoKey {
 				return ""
 			}
-			_, _ = raft.DPrintf("Client:%20v cmdIndex:%4d| Successful! Get:[%v] from server:%3d value:[%v]\n", ck.me, ck.cmdIndex, key, leader, reply.Value)
+			raft.InfoKV.Printf("Client:%20v cmdIndex:%4d| Successful! Get:[%v] from server:%3d value:[%v]\n", ck.me, ck.cmdIndex, key, leader, reply.Value)
 			return reply.Value
 		}
 		//寻找下一个leader
@@ -93,12 +93,12 @@ func (ck *Clerk) PutAppend(key string, value string, op string) {
 		CmdIndex: ck.cmdIndex,
 	}
 	leader := ck.leader
-	_, _ = raft.DPrintf("Client:%20v cmdIndex:%4d| Begin! %6s key:[%s] value:[%s] to server:%3d\n", ck.me, ck.cmdIndex, op, key, value, leader)
+	raft.InfoKV.Printf("Client:%20v cmdIndex:%4d| Begin! %6s key:[%s] value:[%s] to server:%3d\n", ck.me, ck.cmdIndex, op, key, value, leader)
 	for {
 		reply := PutAppendReply{}
 		ok := ck.servers[leader].Call("KVServer.PutAppend", &args, &reply)
 		if ok && reply.WrongLeader == false && reply.Err == OK {
-			_, _ = raft.DPrintf("Client:%20v cmdIndex:%4d| Successful! %6s key:[%s] value:[%s] to server:%3d\n", ck.me, ck.cmdIndex, op, key, value, leader)
+			raft.InfoKV.Printf("Client:%20v cmdIndex:%4d| Successful! %6s key:[%s] value:[%s] to server:%3d\n", ck.me, ck.cmdIndex, op, key, value, leader)
 			ck.leader = leader
 			return
 		}
