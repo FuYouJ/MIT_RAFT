@@ -190,7 +190,7 @@ func (rf *Raft) readPersist(data []byte) {
 	//还没运行之前调用此函数
 	//所以不用加锁了吧
 	if dec.Decode(&term) != nil || dec.Decode(&votedFor) != nil || dec.Decode(&logs) != nil || dec.Decode(&lastIncludedIndex) != nil || dec.Decode(&lastIncludedTerm) != nil {
-		InfoRaft.Printf("Raft:%2d term:%3d | Failed to read persist data!\n", rf.me, rf.currentTerm)
+		InfoRaft.Printf("Raft:%2d term:%3d | Failed to read persist data!\n")
 	} else {
 		rf.currentTerm = term
 		rf.votedFor = votedFor
@@ -935,8 +935,10 @@ func (rf *Raft) broadcastEntries() {
 	}
 }
 
+//===============================================================================================================
 //lab3添加的代码如下
 //snapshot
+//===============================================================================================================
 func (rf *Raft) TakeSnapshot(rawSnapshot []byte, appliedId int, term int) {
 	//data kv需要快照的数据，index，快照对应的日志下标，term，下标所属term
 	rf.mu.Lock()

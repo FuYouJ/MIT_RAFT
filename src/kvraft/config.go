@@ -1,10 +1,10 @@
 package kvraft
 
 import (
-	labrpc "raft/src/labrpc"
-	raft2 "raft/src/raft"
+	"raft/src/labrpc"
+	"raft/src/raft"
+	"testing"
 )
-import "testing"
 import "os"
 
 // import "log"
@@ -49,7 +49,7 @@ type config struct {
 	net          *labrpc.Network
 	n            int
 	kvservers    []*KVServer
-	saved        []*raft2.Persister
+	saved        []*raft.Persister
 	endnames     [][]string // names of each server's sending ClientEnds
 	clerks       map[*Clerk][]string
 	nextClientId int
@@ -310,7 +310,7 @@ func (cfg *config) StartServer(i int) {
 	if cfg.saved[i] != nil {
 		cfg.saved[i] = cfg.saved[i].Copy()
 	} else {
-		cfg.saved[i] = raft2.MakePersister()
+		cfg.saved[i] = raft.MakePersister()
 	}
 	cfg.mu.Unlock()
 
@@ -372,7 +372,7 @@ func make_config(t *testing.T, n int, unreliable bool, maxraftstate int) *config
 	cfg.net = labrpc.MakeNetwork()
 	cfg.n = n
 	cfg.kvservers = make([]*KVServer, cfg.n)
-	cfg.saved = make([]*raft2.Persister, cfg.n)
+	cfg.saved = make([]*raft.Persister, cfg.n)
 	cfg.endnames = make([][]string, cfg.n)
 	cfg.clerks = make(map[*Clerk][]string)
 	cfg.nextClientId = cfg.n + 1000 // client ids start 1000 above the highest serverid

@@ -10,15 +10,11 @@ import "math/big"
 type Clerk struct {
 	servers []*labrpc.ClientEnd
 	// You will have to modify this struct.
-	//最新的leader
-	leader int
-	//我自己的编号
-	me int64
-	//发送的第几条消息
-	cmdIndex int64
+	leader   int   //记录最新的leader，方便下次通信
+	me       int64 //每个clerk独一无二的编号，调用nrand生成，5台机器中有两台机器相同的概率几乎可以忽略不计
+	cmdIndex int   //clerk给每个RPC调用编号
 }
 
-//随机函数
 func nrand() int64 {
 	max := big.NewInt(int64(1) << 62)
 	bigx, _ := rand.Int(rand.Reader, max)
@@ -30,11 +26,10 @@ func MakeClerk(servers []*labrpc.ClientEnd) *Clerk {
 	ck := new(Clerk)
 	ck.servers = servers
 	// You'll have to add code here.
-	ck.leader = 0
-	//给自己整一个编号
+	ck.leader = 0 //默认一开始找第一个通信
 	ck.me = nrand()
 	ck.cmdIndex = 0
-	raft.InfoKV.Printf("Client: %20v | 创造了以合new Clerk ! \n", ck.me)
+	raft.InfoKV.Printf("Client:%20v  | Create new clerk!\n", ck.me)
 	return ck
 }
 
@@ -51,25 +46,29 @@ func MakeClerk(servers []*labrpc.ClientEnd) *Clerk {
 func (ck *Clerk) Get(key string) string {
 	// You will have to modify this function.
 	ck.cmdIndex++
-	args := GetArgs{Key: key, ClerkID: ck.me, CmdIndex: ck.cmdIndex}
+	args := GetArgs{key, ck.me, ck.cmdIndex}
 	leader := ck.leader
-	raft.InfoKV.Printf("Client:%20v cmdIndex:%4d | Begin ! Get:[%v] from server: %3d\n", ck.me, ck.cmdIndex, key, leader)
+	raft.InfoKV.Printf("Client:%20v cmdIndex:%4d| Begin! Get:[%v] from server:%3d\n", ck.me, ck.cmdIndex, key, leader)
 
 	for {
 		reply := GetReply{}
 		ok := ck.servers[leader].Call("KVServer.Get", &args, &reply)
 		if ok && !reply.WrongLeader {
 			ck.leader = leader
-			//不存在就返回  ""
+			//收到回复信息
 			if reply.Value == ErrNoKey {
+				//kv DB暂时没有这个key
+				//raft.InfoKV.Printf("Client:20v cmdIndex:%4d | Get Failed! No such key\n", ck.me, ck.cmdIndex)
 				return ""
 			}
 			raft.InfoKV.Printf("Client:%20v cmdIndex:%4d| Successful! Get:[%v] from server:%3d value:[%v]\n", ck.me, ck.cmdIndex, key, leader, reply.Value)
 			return reply.Value
 		}
-		//寻找下一个leader
+		//对面不是leader Or 没收到回复
 		leader = (leader + 1) % len(ck.servers)
+		//raft.InfoKV.Printf("Client:%20v cmdIndex:%4d| Failed! Change server to %3d\n", ck.me, ck.cmdIndex, leader)
 	}
+
 }
 
 //
@@ -85,26 +84,22 @@ func (ck *Clerk) Get(key string) string {
 func (ck *Clerk) PutAppend(key string, value string, op string) {
 	// You will have to modify this function.
 	ck.cmdIndex++
-	args := PutAppendArgs{
-		Key:      key,
-		Value:    value,
-		Op:       op,
-		ClerkID:  ck.me,
-		CmdIndex: ck.cmdIndex,
-	}
+	args := PutAppendArgs{key, value, op, ck.me, ck.cmdIndex}
 	leader := ck.leader
 	raft.InfoKV.Printf("Client:%20v cmdIndex:%4d| Begin! %6s key:[%s] value:[%s] to server:%3d\n", ck.me, ck.cmdIndex, op, key, value, leader)
+
 	for {
 		reply := PutAppendReply{}
-		ok := ck.servers[leader].Call("KVServer.PutAppend", &args, &reply)
-		if ok && reply.WrongLeader == false && reply.Err == OK {
+		if ok := ck.servers[leader].Call("KVServer.PutAppend", &args, &reply); ok && !reply.WrongLeader && reply.Err == OK {
 			raft.InfoKV.Printf("Client:%20v cmdIndex:%4d| Successful! %6s key:[%s] value:[%s] to server:%3d\n", ck.me, ck.cmdIndex, op, key, value, leader)
 			ck.leader = leader
 			return
 		}
 		//如果不是 尝试下一个 是不是leader
 		leader = (leader + 1) % len(ck.servers)
+		//raft.InfoKV.Printf("Client:%20v cmdIndex:%4d| Failed! Change server to %3d\n", ck.me, ck.cmdIndex, leader)
 	}
+
 }
 
 func (ck *Clerk) Put(key string, value string) {
