@@ -319,10 +319,10 @@ func (kv *KVServer) checkState(index int, term int) {
 
 	//日志长度接近时，启动快照
 	//因为rf连续提交日志后才会释放rf.mu，所以需要提前发出快照调用
-	portion := 2 / 3
+	//portion := 2 / 3.0
 	//一个log的字节长度不是1，而可能是几十字节，所以可能仅仅几十个命令的raftStateSize就超过1000了。
 	//几个log的字节大小可能就几百字节了，所以快照要趁早
-	if kv.persister.RaftStateSize() < kv.maxraftstate*portion {
+	if kv.persister.RaftStateSize()*1.0 < kv.maxraftstate*2/3.0 {
 		return
 	}
 	//因为takeSnapshot需要rf.mu

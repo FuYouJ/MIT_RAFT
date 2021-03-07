@@ -1,6 +1,7 @@
 package shardkv
 
 import (
+	"raft/src/labgob"
 	"raft/src/labrpc"
 	"raft/src/raft"
 	"sync"
