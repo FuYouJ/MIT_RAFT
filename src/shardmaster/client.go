@@ -5,11 +5,11 @@ package shardmaster
 //
 
 import (
-	"crypto/rand"
-	"math/big"
 	"raft/src/labrpc"
 	"time"
 )
+import "crypto/rand"
+import "math/big"
 
 type Clerk struct {
 	servers []*labrpc.ClientEnd
@@ -28,9 +28,10 @@ func nrand() int64 {
 func MakeClerk(servers []*labrpc.ClientEnd) *Clerk {
 	ck := new(Clerk)
 	ck.servers = servers
+
+	// Your code here.
 	ck.me = nrand()
 	ck.cmdIndex = 0
-	// Your code here.
 	return ck
 }
 

@@ -18,21 +18,22 @@ var (
 //初始化log
 func init() {
 	//每次必须打开新的文件
-	infoFile, err := os.OpenFile("raftInfo.log", os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0666)
+	//|os.O_EXCL
+	infoFile, err := os.OpenFile("raftInfo.log", os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		log.Fatalln("Open infoFile failed.\n", err)
 	}
-	warnFile, err := os.OpenFile("raftWarn.log", os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0666)
+	warnFile, err := os.OpenFile("raftWarn.log", os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		log.Fatalln("Open warnFile failed.\n", err)
 	}
 
-	InfoKVFile, err := os.OpenFile("kvInfo.log", os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0666)
+	InfoKVFile, err := os.OpenFile("kvInfo.log", os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		log.Fatalln("Open infoKVFile failed.\n", err)
 	}
 
-	ShardInfoFile, err := os.OpenFile("shardInfo.log", os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0666)
+	ShardInfoFile, err := os.OpenFile("shardInfo.log", os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		log.Fatalln("Open shardInfoFile failed.\n", err)
 	}

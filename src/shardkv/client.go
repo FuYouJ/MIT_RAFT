@@ -10,17 +10,20 @@ package shardkv
 
 import (
 	"crypto/rand"
-	"math/big"
 	"raft/src/labrpc"
 	"raft/src/shardmaster"
-	"time"
 )
+import "math/big"
+import "time"
+
+//import "raft"
 
 //
 // which shard is a key in?
 // please use this function,
 // and please do not change it.
 //
+//hash函数 分配 key
 func key2shard(key string) int {
 	shard := 0
 	if len(key) > 0 {
@@ -74,23 +77,29 @@ func MakeClerk(masters []*labrpc.ClientEnd, make_end func(string) *labrpc.Client
 func (ck *Clerk) Get(key string) string {
 	args := GetArgs{}
 	args.Key = key
+	ck.cmdIndex++
+	args.Clerk = ck.me
+	args.CmdIndex = ck.cmdIndex
+
+	shard := key2shard(key)
+	args.Shard = shard
 
 	for {
-		shard := key2shard(key)
 		gid := ck.config.Shards[shard]
+		//raft.ShardInfo.Printf("Client:%12d num:%3d | get{%v} from gid:%2d\n", ck.me, ck.cmdIndex, args, gid)
+		//raft.ShardInfo.Printf("cfg {%v}\n", ck.config)
 		if servers, ok := ck.config.Groups[gid]; ok {
 			// try each server for the shard.
 			for si := 0; si < len(servers); si++ {
 				srv := ck.make_end(servers[si])
 				var reply GetReply
 				ok := srv.Call("ShardKV.Get", &args, &reply)
-				if ok && (reply.Err == OK || reply.Err == ErrNoKey) {
+				if ok && reply.WrongLeader == false && (reply.Err == OK || reply.Err == ErrNoKey) {
 					return reply.Value
 				}
 				if ok && (reply.Err == ErrWrongGroup) {
 					break
 				}
-				// ... not ok, or ErrWrongLeader
 			}
 		}
 		time.Sleep(100 * time.Millisecond)
@@ -110,22 +119,28 @@ func (ck *Clerk) PutAppend(key string, value string, op string) {
 	args.Key = key
 	args.Value = value
 	args.Op = op
+	ck.cmdIndex++
+	args.Clerk = ck.me
+	args.CmdIndex = ck.cmdIndex
+
+	shard := key2shard(key)
+	args.Shard = shard
 
 	for {
-		shard := key2shard(key)
 		gid := ck.config.Shards[shard]
+		//raft.ShardInfo.Printf("Client:%12d num:%3d | putappend{%v} to gid:%2d\n", ck.me, ck.cmdIndex, args, gid)
+		//raft.ShardInfo.Printf("cfg {%v}\n", ck.config)
 		if servers, ok := ck.config.Groups[gid]; ok {
 			for si := 0; si < len(servers); si++ {
 				srv := ck.make_end(servers[si])
 				var reply PutAppendReply
 				ok := srv.Call("ShardKV.PutAppend", &args, &reply)
-				if ok && reply.Err == OK {
+				if ok && reply.WrongLeader == false && reply.Err == OK {
 					return
 				}
 				if ok && reply.Err == ErrWrongGroup {
 					break
 				}
-				// ... not ok, or ErrWrongLeader
 			}
 		}
 		time.Sleep(100 * time.Millisecond)
