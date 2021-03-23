@@ -18,3 +18,14 @@
 - 遍历shardToAssign（需要分配的shard切片），分配给tless的group。直到这些集群的shard集群数量到N为止。如果没有tless，就分配给tok。
 - 继续遍历tless，如果仍然还有group负责的节点小于N，此时应该将tmore里面的迁移到tless,出现这种情况有可能是集群离去了，或者是shard数量正好可以整除集群数量。
 
+## ShardedKV
+
+### 配置更新
+
+- 仅仅只有leader去获取配置信息，如果检测到配置更新，则会促发一次日志同步，更新整个集群的配置。
+- 配置更新后，仅仅只有leader负责shard迁移和接受，每次迁移/接受成功一个shard，会促发一次日志同步，保证整个集群同步删除或者新增shard
+- follower仅仅是相应leader的日志，进项相应配置的更新，迁移，接受shard,不负责和外界的交互。
+- 如果在迁移shard过程中leader宕机了，新leader上来收需要发送未完成的shard。
+- 每个集群独立向shardmaster获取最新的配置信息。
+- 如果配置更新，那么采用push的方式进行shard迁移。
+- 每一轮配置中，每个集群必须接收完新的shard,并且发送完所有需要发送的shard，才开始下一轮配置更新，
