@@ -1,0 +1,6 @@
+
+*.log
+*.iml
+*.xml
+.idea/.name
+go.mod
