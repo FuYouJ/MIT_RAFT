@@ -245,6 +245,7 @@ func max(a, b int) int {
 //leader调用follower的AppendEntries RPC服务
 //站在follower角度完成下面这个RPC调用
 func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply) {
+	
 	//follower收到leader的信息
 	rf.mu.Lock()
 	//defer后进先出
