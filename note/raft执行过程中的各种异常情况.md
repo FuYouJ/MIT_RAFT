@@ -40,7 +40,7 @@ raft协议强依赖leader节点的可用性来确保集群数据的一致性。�
 
 依然以AB|CDE为例，A是旧leader，C是另外一个分区的leader.此时一个写请求发送给C，C能够得到大多数节点的响应，是可以正常的更新数据的。但是与此同时，一个相同的读请求发送给A，就会读到脏数据。
 
-PingCap联合创始人、CTO 黄东旭写的一篇解决Raft网络分区的一种方案: [通过 raft 的 leader lease 来解决集群脑裂时的 stale read 问题](https://pingcap.com/blog-stale-read-zh)。这里简单说一下。
+PingCap联合创始人、CTO 黄东旭写的一篇解决Raft网络分区的一种方案: [通过 raft 的 leader lease 来解决集群脑裂时的 stale read 问题](https://mp.weixin.qq.com/s?__biz=MzI3NDIxNTQyOQ==&mid=2247484229&idx=1&sn=77d6178f182189e1fc8f042aa698f2e5&chksm=eb16242fdc61ad39d74b4af1a72253bc5ae0de42fa1d65274fd21b9f903e03e77e8d4680ee0c#rd)。这里简单说一下。
 
 引入一个新的概念，region leader,region leader是一个逻辑上的概念，任意时刻对于一个region来说，只有一个region leader.每个region leader在任期时间内用心跳更新一下自己的租约时间。所有的读写请求都必须经过region leader 完成，可能region leader 和 raft leader 可能不是同一个节点。当他们不是同一个节点的时候，raft leader 就要转发请求给 region leader.所以在网络分区出现的时候，会出现以下四种情况。
 
